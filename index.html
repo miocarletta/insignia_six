@@ -3,459 +3,715 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#03060d">
-<title>INSIGNIA SIX — Summon</title>
+<title>INSIGNIA SIX — Call</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
-  --bg:#03060d;--text:#c8daf0;--muted:#3a5068;
-  --mio:#f0f4ff;--pena-light:#4a8edb;--vania:#7ab8f5;
-  --mizu:#9eaab8;--pulu:#3ecf6a;--al-light:#888;
+  --bg:#03060d;--card:#0d1623;--border:#1a2e48;--text:#c8daf0;--muted:#3a5068;
+  --mio:#f0f4ff;--pena:#4a8edb;--vania:#7ab8f5;--mizu:#9eaab8;--pulu:#3ecf6a;--al:#888;
 }
 html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
 
 .grid-bg{position:fixed;inset:0;pointer-events:none;
-  background-image:linear-gradient(rgba(20,60,120,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(20,60,120,.07) 1px,transparent 1px);
+  background-image:linear-gradient(rgba(20,60,120,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(20,60,120,.06) 1px,transparent 1px);
   background-size:36px 36px;}
-.grid-bg::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 20%,var(--bg) 75%);}
-.scanlines{position:fixed;inset:0;pointer-events:none;z-index:99;opacity:.3;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.1) 2px,rgba(0,0,0,.1) 4px);}
+.grid-bg::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 20%,var(--bg) 80%);}
 
-.main{position:relative;z-index:10;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;}
-.sys-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;}
-.title{font-family:'Syne',sans-serif;font-size:clamp(1.4rem,7vw,2.4rem);font-weight:800;letter-spacing:2px;color:#e8f0ff;margin-bottom:2px;}
-.subtitle{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:3px;margin-bottom:28px;}
+.screen{display:none;position:fixed;inset:0;z-index:10;overflow-y:auto;
+  flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;}
+.screen.active{display:flex;}
 
-.cmd-line{display:flex;align-items:center;gap:8px;background:rgba(10,22,40,.85);border:1px solid rgba(74,142,219,.22);border-radius:12px;padding:13px 15px;backdrop-filter:blur(12px);width:min(480px,100%);margin-bottom:10px;}
-.prompt{font-family:'Share Tech Mono',monospace;color:#4a8edb;font-size:13px;flex-shrink:0;}
-#codeInput{flex:1;min-width:0;background:none;border:none;outline:none;font-family:'Share Tech Mono',monospace;font-size:16px;color:#e8f0ff;letter-spacing:4px;text-transform:uppercase;caret-color:#4a8edb;}
-#codeInput::placeholder{color:var(--muted);letter-spacing:1px;font-size:12px;}
-.enter-hint{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);flex-shrink:0;}
+/* ── SCREEN 1: PILIH ── */
+.logo{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:8px;}
+.screen-title{font-family:'Syne',sans-serif;font-size:clamp(1.6rem,7vw,2.4rem);font-weight:800;color:#e8f0ff;margin-bottom:4px;text-align:center;}
+.screen-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:28px;text-align:center;}
 
-#status{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted);height:18px;text-align:center;margin-bottom:18px;width:min(480px,100%);}
+.char-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:min(440px,100%);margin-bottom:20px;}
+@media(min-width:480px){.char-grid{grid-template-columns:repeat(3,1fr);}}
 
-.char-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(480px,100%);}
-@media(min-width:440px){.char-pills{grid-template-columns:repeat(6,1fr);}}
-.pill{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px;padding:13px 4px;border-radius:10px;border:1px solid;cursor:pointer;transition:all .15s;opacity:.55;text-align:center;user-select:none;}
-.pill:active{opacity:1;transform:scale(.96);}
-@media(hover:hover){.pill:hover{opacity:1;transform:scale(1.04);}}
-.pill-mio{color:var(--mio);border-color:rgba(240,244,255,.25);background:rgba(240,244,255,.04);}
-.pill-pena{color:var(--pena-light);border-color:rgba(74,142,219,.35);background:rgba(26,74,138,.07);}
-.pill-vania{color:var(--vania);border-color:rgba(122,184,245,.28);background:rgba(122,184,245,.05);}
-.pill-mizu{color:var(--mizu);border-color:rgba(158,170,184,.28);background:rgba(158,170,184,.04);}
-.pill-pulu{color:var(--pulu);border-color:rgba(62,207,106,.28);background:rgba(62,207,106,.05);}
-.pill-al{color:var(--al-light);border-color:rgba(120,120,120,.3);background:rgba(80,80,80,.06);}
+.char-btn{border-radius:16px;border:1px solid;padding:20px 12px;cursor:pointer;transition:all .2s;text-align:center;background:rgba(255,255,255,.02);user-select:none;}
+.char-btn:active{transform:scale(.95);}
+@media(hover:hover){.char-btn:hover{transform:scale(1.03);}}
+.char-btn .cb-symbol{font-size:1.8rem;margin-bottom:8px;display:block;}
+.char-btn .cb-name{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-bottom:2px;}
+.char-btn .cb-role{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;opacity:.5;}
+#connectStatus{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-align:center;min-height:20px;}
 
-/* STAGE */
-#stage{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(3,6,13,.93);backdrop-filter:blur(6px);padding:20px 16px;overflow-y:auto;}
-#stage.active{display:flex;}
-.close-btn{position:fixed;top:16px;right:16px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--muted);cursor:pointer;border:1px solid rgba(100,130,160,.3);padding:9px 14px;border-radius:8px;transition:all .2s;z-index:10;background:rgba(10,22,40,.8);}
-.close-btn:active{color:#e8f0ff;border-color:rgba(200,218,240,.4);}
+/* ── SCREEN 2: LOBBY ── */
+#screenLobby{justify-content:flex-start;padding-top:0;}
+.lobby-wrap{width:min(480px,100%);padding:20px 0 80px;}
 
-.holo-wrap{position:relative;width:min(260px,68vw);height:min(260px,68vw);display:flex;align-items:center;justify-content:center;margin-bottom:20px;flex-shrink:0;}
-.holo-symbol{position:relative;z-index:5;width:55%;height:55%;opacity:0;filter:drop-shadow(0 0 16px currentColor);transition:opacity .3s;}
-.holo-symbol.visible{opacity:1;animation:symbolFlicker 4s ease-in-out infinite;}
-@keyframes symbolFlicker{0%,100%{opacity:1;filter:drop-shadow(0 0 16px currentColor) drop-shadow(0 0 36px currentColor);}92%{opacity:1;}93%{opacity:.5;}94%{opacity:1;}97%{opacity:.75;}98%{opacity:1;}}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 0 16px;position:sticky;top:0;background:var(--bg);z-index:5;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.my-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid;border-radius:99px;padding:6px 14px;}
+.my-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.my-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;}
+.online-dot{width:7px;height:7px;border-radius:50%;background:#3ecf6a;box-shadow:0 0 6px #3ecf6a;}
 
-.holo-scan{position:absolute;width:100%;height:2px;background:linear-gradient(90deg,transparent,currentColor,transparent);opacity:0;top:0;}
-@keyframes scanMove{0%{top:0;opacity:.5;}100%{top:100%;opacity:0;}}
-.particle{position:absolute;width:2px;height:2px;border-radius:50%;opacity:0;}
-@keyframes particleFly{0%{transform:translate(0,0) scale(1);opacity:.9;}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0;}}
-@keyframes ringExpand{0%{transform:scale(.2);opacity:.7;}100%{transform:scale(1.5);opacity:0;}}
-@keyframes ringRotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-@keyframes ringRotateCCW{from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
+.section-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;}
 
-.char-info{text-align:center;opacity:0;transform:translateY(10px);transition:all .5s ease;max-width:320px;width:100%;}
-.char-info.visible{opacity:1;transform:translateY(0);}
-.char-latin{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:5px;text-transform:uppercase;opacity:.5;margin-bottom:6px;}
-.aksara-wrap{height:40px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
-.char-role{font-family:'Syne',sans-serif;font-size:clamp(.95rem,4vw,1.1rem);font-weight:700;margin-bottom:4px;}
-.char-tagline{font-size:13px;color:var(--muted);line-height:1.6;max-width:280px;margin:0 auto;}
+.online-list{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
+.online-item{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;transition:border-color .2s;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.oi-left{display:flex;align-items:center;gap:10px;}
+.oi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.oi-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;}
+.oi-role{font-family:'Share Tech Mono',monospace;font-size:9px;opacity:.5;letter-spacing:1px;}
+.oi-actions{display:flex;gap:8px;}
 
-.transmission{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);white-space:nowrap;overflow:hidden;z-index:5;}
-.error-flash{position:fixed;inset:0;background:rgba(255,30,30,.04);pointer-events:none;opacity:0;z-index:300;transition:opacity .1s;}
-.error-flash.show{opacity:1;}
+.btn-call{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:9px 14px;border-radius:8px;cursor:pointer;border:none;transition:all .15s;user-select:none;}
+.btn-voice{background:rgba(62,207,106,.15);color:#3ecf6a;border:1px solid rgba(62,207,106,.3);}
+.btn-voice:active{background:rgba(62,207,106,.3);}
+.btn-chat{background:rgba(74,142,219,.12);color:var(--pena);border:1px solid rgba(74,142,219,.25);}
+.btn-chat:active{background:rgba(74,142,219,.25);}
+
+.empty-state{text-align:center;padding:28px 20px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px;border:1px dashed var(--border);border-radius:14px;line-height:2;}
+
+.btn-group{width:100%;padding:16px;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;border:1px solid rgba(62,207,106,.3);background:rgba(62,207,106,.08);color:var(--pulu);transition:all .2s;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-group:active{background:rgba(62,207,106,.2);}
+.btn-group:disabled{opacity:.4;cursor:not-allowed;}
+.btn-secondary{width:100%;padding:12px;border-radius:12px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s;margin-top:4px;}
+.btn-secondary:active{color:var(--text);border-color:rgba(200,218,240,.3);}
+
+/* ── SCREEN 3: CALL ── */
+#screenCall{background:rgba(3,6,13,.98);justify-content:flex-start;padding:0 16px;}
+.call-wrap{width:min(440px,100%);display:flex;flex-direction:column;align-items:center;height:100%;padding:20px 0 8px;min-height:0;}
+
+.call-header{text-align:center;padding-bottom:12px;width:100%;flex-shrink:0;}
+.call-status-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:6px;}
+.call-with{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;margin-bottom:2px;}
+.call-timer{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--muted);}
+
+.avatars-row{display:flex;gap:16px;justify-content:center;align-items:flex-start;padding:12px 0;flex-wrap:wrap;flex-shrink:0;}
+.avatar{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;}
+.avatar-ring{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid;position:relative;}
+.avatar-ring.speaking{animation:speakPulse .7s ease-in-out infinite;}
+@keyframes speakPulse{0%,100%{box-shadow:0 0 0 0 currentColor;}50%{box-shadow:0 0 0 10px rgba(0,0,0,0);}}
+.avatar-symbol{width:32px;height:32px;}
+.avatar-name{font-family:'Syne',sans-serif;font-weight:700;font-size:10px;}
+.muted-badge{position:absolute;bottom:-2px;right:-2px;background:var(--bg);border-radius:50%;width:18px;height:18px;display:none;align-items:center;justify-content:center;font-size:9px;border:1px solid var(--border);}
+.muted-badge.show{display:flex;}
+
+.chat-area{flex:1;width:100%;overflow-y:auto;background:rgba(10,22,40,.5);border:1px solid var(--border);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px;min-height:0;}
+.chat-area::-webkit-scrollbar{width:3px;}
+.chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+
+.msg{display:flex;gap:8px;align-items:flex-end;}
+.msg.mine{flex-direction:row-reverse;}
+.msg-bubble{max-width:75%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;border:1px solid var(--border);background:rgba(255,255,255,.03);}
+.msg.mine .msg-bubble{background:rgba(74,142,219,.12);border-color:rgba(74,142,219,.25);}
+.msg-sender{font-family:'Syne',sans-serif;font-weight:700;font-size:10px;margin-bottom:2px;}
+.msg-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-bottom:4px;}
+.sys-msg{text-align:center;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);padding:4px 0;}
+
+.chat-input-row{display:flex;gap:8px;width:100%;padding:8px 0 4px;flex-shrink:0;}
+.chat-input{flex:1;background:rgba(10,22,40,.8);border:1px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;}
+.chat-input:focus{border-color:rgba(74,142,219,.4);}
+.chat-input::placeholder{color:var(--muted);}
+.btn-send{background:rgba(74,142,219,.15);border:1px solid rgba(74,142,219,.3);color:var(--pena);border-radius:12px;padding:11px 16px;cursor:pointer;font-size:16px;transition:all .15s;flex-shrink:0;}
+.btn-send:active{background:rgba(74,142,219,.3);}
+
+.call-controls{display:flex;gap:14px;justify-content:center;padding:10px 0 4px;width:100%;flex-shrink:0;}
+.ctrl-btn{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s;flex-shrink:0;border:1px solid transparent;}
+.ctrl-mute{background:rgba(255,255,255,.07);color:var(--text);border-color:rgba(255,255,255,.1);}
+.ctrl-mute.muted{background:rgba(255,80,80,.15);color:#ff5050;border-color:rgba(255,80,80,.3);}
+.ctrl-mute:active,.ctrl-speaker:active{transform:scale(.9);}
+.ctrl-end{background:rgba(255,50,50,.18);color:#ff4444;font-size:22px;width:62px;height:62px;border-color:rgba(255,50,50,.35);}
+.ctrl-end:active{background:rgba(255,50,50,.4);transform:scale(.9);}
+.ctrl-speaker{background:rgba(255,255,255,.07);color:var(--text);border-color:rgba(255,255,255,.1);}
+
+/* ── INCOMING CALL ── */
+#incomingCall{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;background:rgba(3,6,13,.96);backdrop-filter:blur(8px);}
+#incomingCall.show{display:flex;}
+.incoming-card{background:var(--card);border:1px solid;border-radius:24px;padding:32px 28px;text-align:center;width:min(320px,88vw);}
+.inc-pulse{animation:incPulse 1.2s ease-in-out infinite;}
+@keyframes incPulse{0%,100%{box-shadow:0 0 0 0 transparent;}50%{box-shadow:0 0 0 14px rgba(62,207,106,.06);}}
+.inc-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:14px;}
+.inc-symbol{font-size:2.8rem;display:block;margin-bottom:8px;animation:ringShake 1s ease-in-out infinite;}
+@keyframes ringShake{0%,100%{transform:rotate(0);}15%{transform:rotate(-18deg);}30%{transform:rotate(18deg);}45%{transform:rotate(-10deg);}60%{transform:rotate(10deg);}75%{transform:rotate(-5deg);}90%{transform:rotate(5deg);}}
+.inc-name{font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;margin-bottom:4px;}
+.inc-role{font-size:12px;color:var(--muted);margin-bottom:24px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+.inc-type{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;margin-bottom:20px;}
+.inc-btns{display:flex;gap:12px;}
+.btn-accept{flex:1;padding:14px;border-radius:14px;border:none;cursor:pointer;background:rgba(62,207,106,.18);color:var(--pulu);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;border:1px solid rgba(62,207,106,.4);}
+.btn-accept:active{background:rgba(62,207,106,.4);}
+.btn-decline{flex:1;padding:14px;border-radius:14px;border:none;cursor:pointer;background:rgba(255,50,50,.1);color:#ff5050;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;border:1px solid rgba(255,50,50,.25);}
+.btn-decline:active{background:rgba(255,50,50,.3);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 18px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--text);transition:transform .3s;z-index:600;white-space:nowrap;max-width:90vw;text-align:center;}
+.toast.show{transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
 <div class="grid-bg"></div>
-<div class="scanlines"></div>
-<div class="error-flash" id="errorFlash"></div>
 
-<div class="main">
-  <div class="sys-label">// INSIGNIA SIX · SUMMON PROTOCOL</div>
-  <div class="title">PANGGIL INSIGNIA</div>
-  <div class="subtitle">[ KETIK ATAU TAP KARAKTER ]</div>
-  <div class="cmd-line">
-    <span class="prompt">SYS:~$</span>
-    <input id="codeInput" type="text" maxlength="6" placeholder="ketik kode..." autocomplete="off" spellcheck="false" inputmode="text">
-    <span class="enter-hint">[↵]</span>
-  </div>
-  <div id="status"></div>
-  <div class="char-pills">
-    <div class="pill pill-mio" onclick="summon('MIO')">MIO</div>
-    <div class="pill pill-pena" onclick="summon('PENA')">PENA</div>
-    <div class="pill pill-vania" onclick="summon('VANIA')">VANIA</div>
-    <div class="pill pill-mizu" onclick="summon('MIZU')">MIZU</div>
-    <div class="pill pill-pulu" onclick="summon('PULU')">PULU</div>
-    <div class="pill pill-al" onclick="summon('AL')">AL</div>
-  </div>
-</div>
-
-<div id="stage">
-  <div class="close-btn" onclick="closeStage()">✕ DISMISS</div>
-  <div class="holo-wrap" id="holoWrap">
-    <div class="holo-scan" id="holoScan"></div>
-    <svg class="holo-symbol" id="holoSymbol" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"></svg>
-  </div>
-  <div class="char-info" id="charInfo">
-    <div class="char-latin" id="charLatin"></div>
-    <div class="aksara-wrap">
-      <svg id="aksaraSvg" viewBox="0 0 300 48" height="40" xmlns="http://www.w3.org/2000/svg"></svg>
+<!-- INCOMING -->
+<div id="incomingCall">
+  <div class="incoming-card inc-pulse" id="incCard">
+    <div class="inc-label">📞 PANGGILAN MASUK</div>
+    <span class="inc-symbol" id="incSymbol">◎</span>
+    <div class="inc-name" id="incName">—</div>
+    <div class="inc-role" id="incRole">—</div>
+    <div class="inc-type" id="incType">VOICE + CHAT</div>
+    <div class="inc-btns">
+      <button class="btn-accept" onclick="acceptCall()">✓ Angkat</button>
+      <button class="btn-decline" onclick="declineCall()">✕ Tolak</button>
     </div>
-    <div class="char-role" id="charRole"></div>
-    <div class="char-tagline" id="charTagline"></div>
   </div>
-  <div class="transmission" id="transmission"></div>
 </div>
+
+<div class="toast" id="toast"></div>
+
+<!-- SCREEN 1 -->
+<div class="screen active" id="screenSelect">
+  <div class="logo">// INSIGNIA SIX · COMMUNICATION LINK</div>
+  <div class="screen-title">Pilih Identitasmu</div>
+  <div class="screen-sub">[ SIAPA KAMU DALAM INSIGNIA? ]</div>
+  <div class="char-grid" id="charGrid"></div>
+  <div id="connectStatus"></div>
+</div>
+
+<!-- SCREEN 2 -->
+<div class="screen" id="screenLobby">
+  <div class="lobby-wrap">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="my-badge" id="myBadge">
+          <div class="my-dot" id="myDot"></div>
+          <div class="my-name" id="myName">—</div>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+      <button class="btn-secondary" style="width:auto;padding:8px 16px;margin:0;" onclick="logout()">KELUAR</button>
+    </div>
+
+    <div class="section-label">Insignia Online</div>
+    <div class="online-list" id="onlineList">
+      <div class="empty-state" id="emptyState">
+        Mendeteksi insignia lain...<br><br>
+        Bagikan link ke teman:<br>
+        <span id="shareLink" style="color:var(--pena);word-break:break-all;font-size:9px;"></span>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px;">Panggilan Group</div>
+    <button class="btn-group" id="btnGroup" onclick="startGroupCall()">
+      <span>⬡</span> Panggil Semua Insignia
+    </button>
+    <button class="btn-secondary" onclick="logout()">↩ Ganti Karakter</button>
+  </div>
+</div>
+
+<!-- SCREEN 3 -->
+<div class="screen" id="screenCall">
+  <div class="call-wrap">
+    <div class="call-header">
+      <div class="call-status-label" id="callStatusLabel">TERHUBUNG</div>
+      <div class="call-with" id="callWith">—</div>
+      <div class="call-timer" id="callTimer">00:00</div>
+    </div>
+    <div class="avatars-row" id="avatarsRow"></div>
+    <div class="chat-area" id="chatArea"></div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" placeholder="Ketik pesan..." maxlength="300" autocomplete="off">
+      <button class="btn-send" onclick="sendMsg()">↑</button>
+    </div>
+    <div class="call-controls">
+      <button class="ctrl-btn ctrl-speaker" id="btnSpeaker" onclick="toggleSpeaker()">🔊</button>
+      <button class="ctrl-btn ctrl-end" onclick="endCall()">📵</button>
+      <button class="ctrl-btn ctrl-mute" id="btnMute" onclick="toggleMute()">🎤</button>
+    </div>
+  </div>
+</div>
+
+<audio id="remoteAudio" autoplay playsinline></audio>
 
 <script>
-// ── AUDIO ENGINE ──
-let audioCtx = null;
-function getCtx(){
-  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  if(audioCtx.state==='suspended') audioCtx.resume();
-  return audioCtx;
-}
-function osc(ctx,type,freq,start,dur,gain,detune=0){
-  const o=ctx.createOscillator(),g=ctx.createGain();
-  o.type=type;o.frequency.setValueAtTime(freq,start);
-  if(detune)o.detune.setValueAtTime(detune,start);
-  g.gain.setValueAtTime(0,start);g.gain.linearRampToValueAtTime(gain,start+.06);
-  g.gain.exponentialRampToValueAtTime(.0001,start+dur);
-  o.connect(g);g.connect(ctx.destination);o.start(start);o.stop(start+dur+.05);
-}
-function makeReverb(ctx,dur=2,decay=2){
-  const len=ctx.sampleRate*dur,buf=ctx.createBuffer(2,len,ctx.sampleRate);
-  for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}
-  const conv=ctx.createConvolver();conv.buffer=buf;return conv;
-}
-
-const sounds={
-  // MIO — putih: kristal, angelic bell, ethereal shimmer
-  MIO:(ctx)=>{
-    const t=ctx.currentTime,rev=makeReverb(ctx,3,1.5),mg=ctx.createGain();
-    mg.gain.setValueAtTime(.28,t);rev.connect(mg);mg.connect(ctx.destination);
-    [[523.25,0,1.2],[659.25,.15,1.4],[783.99,.3,1.6],[1046.5,.5,1.2],[1318.5,.75,1.0],[523.25,1.1,.8]].forEach(([f,d,dr])=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.setValueAtTime(f,t+d);
-      g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.4,t+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d+dr);
-      o.connect(g);g.connect(rev);o.start(t+d);o.stop(t+d+dr+.1);
-    });
-    [523.25,659.25,783.99].forEach((f,i)=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.setValueAtTime(f,t);o.detune.setValueAtTime(i*5,t);
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+.4);g.gain.exponentialRampToValueAtTime(.0001,t+3);
-      o.connect(g);g.connect(rev);o.start(t);o.stop(t+3.2);
-    });
-  },
-  // PENA — biru tua: dalam, strategis, drone + ascending
-  PENA:(ctx)=>{
-    const t=ctx.currentTime,rev=makeReverb(ctx,2.5,2),mg=ctx.createGain();
-    mg.gain.setValueAtTime(.3,t);rev.connect(mg);mg.connect(ctx.destination);
-    const dr=ctx.createOscillator(),dg=ctx.createGain();
-    dr.type='sine';dr.frequency.setValueAtTime(65.4,t);
-    dg.gain.setValueAtTime(0,t);dg.gain.linearRampToValueAtTime(.35,t+.3);dg.gain.exponentialRampToValueAtTime(.0001,t+3.5);
-    dr.connect(dg);dg.connect(rev);dr.start(t);dr.stop(t+4);
-    [[146.8,.2,.9],[174.6,.5,.9],[195.9,.8,.9],[220,1.1,1.1],[261.6,1.5,1.4]].forEach(([f,d,dr])=>osc(ctx,'triangle',f,t+d,dr,.22));
-    [0,.4,.8,1.2].forEach(d=>{
-      const buf=ctx.createBuffer(1,ctx.sampleRate*.03,ctx.sampleRate),data=buf.getChannelData(0);
-      for(let i=0;i<data.length;i++)data[i]=Math.random()*(1-i/data.length)*.3;
-      const src=ctx.createBufferSource(),g=ctx.createGain();
-      src.buffer=buf;g.gain.setValueAtTime(.15,t+d);src.connect(g);g.connect(ctx.destination);src.start(t+d);
-    });
-  },
-  // VANIA — biru muda: hangat, mengalir, vibrato sosial
-  VANIA:(ctx)=>{
-    const t=ctx.currentTime,rev=makeReverb(ctx,3,1.2),mg=ctx.createGain();
-    mg.gain.setValueAtTime(.28,t);rev.connect(mg);mg.connect(ctx.destination);
-    [[349.2,0,1.8,.08],[440,.2,1.8,.06],[523.25,.4,2,.05],[392,.7,1.6,.07],[349.2,1.2,1.4,.06]].forEach(([f,d,dur,v])=>{
-      const o=ctx.createOscillator(),g=ctx.createGain(),lfo=ctx.createOscillator(),lfog=ctx.createGain();
-      o.type='sine';o.frequency.setValueAtTime(f,t+d);
-      lfo.frequency.setValueAtTime(4.5,t+d);lfo.type='sine';lfog.gain.setValueAtTime(f*.008,t+d);
-      lfo.connect(lfog);lfog.connect(o.frequency);
-      g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(v,t+d+.15);g.gain.exponentialRampToValueAtTime(.0001,t+d+dur);
-      o.connect(g);g.connect(rev);lfo.start(t+d);lfo.stop(t+d+dur+.1);o.start(t+d);o.stop(t+d+dur+.1);
-    });
-    [698.4,1046.5].forEach(f=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.setValueAtTime(f,t);
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.03,t+.6);g.gain.exponentialRampToValueAtTime(.0001,t+3);
-      o.connect(g);g.connect(rev);o.start(t);o.stop(t+3.5);
-    });
-  },
-  // MIZU — abu: hening, noise air, tetes kristal lambat
-  MIZU:(ctx)=>{
-    const t=ctx.currentTime,rev=makeReverb(ctx,4,1),mg=ctx.createGain();
-    mg.gain.setValueAtTime(.25,t);rev.connect(mg);mg.connect(ctx.destination);
-    const bs=ctx.sampleRate*3,nb=ctx.createBuffer(1,bs,ctx.sampleRate),nd=nb.getChannelData(0);
-    for(let i=0;i<bs;i++)nd[i]=Math.random()*2-1;
-    const nn=ctx.createBufferSource(),nf=ctx.createBiquadFilter(),ng=ctx.createGain();
-    nn.buffer=nb;nf.type='bandpass';nf.frequency.setValueAtTime(600,t);nf.Q.setValueAtTime(.5,t);
-    ng.gain.setValueAtTime(0,t);ng.gain.linearRampToValueAtTime(.08,t+1);ng.gain.exponentialRampToValueAtTime(.0001,t+3.5);
-    nn.connect(nf);nf.connect(ng);ng.connect(rev);nn.start(t);nn.stop(t+4);
-    [[220,0,3.5],[277.18,.8,2.8],[329.63,1.6,2.2]].forEach(([f,d,dr])=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.setValueAtTime(f,t+d);
-      g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.07,t+d+.6);g.gain.exponentialRampToValueAtTime(.0001,t+d+dr);
-      o.connect(g);g.connect(rev);o.start(t+d);o.stop(t+d+dr+.1);
-    });
-    [[1046.5,.5,.6],[880,1.4,.7],[1174.66,2.2,.5]].forEach(([f,d,dr])=>osc(ctx,'sine',f,t+d,dr,.05));
-  },
-  // PULU — hijau: meluap, sweep naik, pecah cerah
-  PULU:(ctx)=>{
-    const t=ctx.currentTime,rev=makeReverb(ctx,2,1.8),mg=ctx.createGain();
-    mg.gain.setValueAtTime(.28,t);rev.connect(mg);mg.connect(ctx.destination);
-    const sw=ctx.createOscillator(),sg=ctx.createGain();
-    sw.type='sine';sw.frequency.setValueAtTime(80,t);sw.frequency.exponentialRampToValueAtTime(400,t+1.5);
-    sg.gain.setValueAtTime(0,t);sg.gain.linearRampToValueAtTime(.15,t+.1);sg.gain.exponentialRampToValueAtTime(.0001,t+1.8);
-    sw.connect(sg);sg.connect(rev);sw.start(t);sw.stop(t+2);
-    [[392,.3,.9],[493.88,.5,1],[587.33,.7,1.1],[739.99,.95,1.2],[880,1.2,1.4],[1174.66,1.5,1.0]].forEach(([f,d,dr])=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='triangle';o.frequency.setValueAtTime(f,t+d);
-      g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.12,t+d+.04);g.gain.exponentialRampToValueAtTime(.0001,t+d+dr);
-      o.connect(g);g.connect(rev);o.start(t+d);o.stop(t+d+dr+.1);
-    });
-    [784,1046.5,1318.5].forEach((f,i)=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.setValueAtTime(f,t+.2);o.detune.setValueAtTime(i*8,t+.2);
-      g.gain.setValueAtTime(0,t+.2);g.gain.linearRampToValueAtTime(.04,t+.6);g.gain.exponentialRampToValueAtTime(.0001,t+3.2);
-      o.connect(g);g.connect(rev);o.start(t+.2);o.stop(t+3.5);
-    });
-  },
-  // AL — abu gelap: stark, resonansi ruang gelap, klik & disonan
-  AL:(ctx)=>{
-    const t=ctx.currentTime,rev=makeReverb(ctx,3.5,2.5),mg=ctx.createGain();
-    mg.gain.setValueAtTime(.3,t);rev.connect(mg);mg.connect(ctx.destination);
-    const lo=ctx.createOscillator(),lg=ctx.createGain();
-    lo.type='sine';lo.frequency.setValueAtTime(55,t);
-    lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(.4,t+.4);lg.gain.exponentialRampToValueAtTime(.0001,t+4);
-    lo.connect(lg);lg.connect(rev);lo.start(t);lo.stop(t+4.5);
-    [[110,.6,1.8],[155.56,1.2,1.5],[164.81,1.8,1.2],[130.81,2.4,1.0]].forEach(([f,d,dr])=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sawtooth';o.frequency.setValueAtTime(f,t+d);
-      g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.06,t+d+.1);g.gain.exponentialRampToValueAtTime(.0001,t+d+dr);
-      o.connect(g);g.connect(rev);o.start(t+d);o.stop(t+d+dr+.1);
-    });
-    const ib=ctx.createBuffer(1,ctx.sampleRate*.08,ctx.sampleRate),id=ib.getChannelData(0);
-    for(let i=0;i<id.length;i++)id[i]=Math.random()*(1-i/id.length)*.6;
-    const is=ctx.createBufferSource(),ig=ctx.createGain();
-    is.buffer=ib;ig.gain.setValueAtTime(.25,t);is.connect(ig);ig.connect(ctx.destination);is.start(t);
-  }
+// ── CHARS ──
+const CHARS = {
+  MIO:  {name:'MIO',  role:'Metakognisi', color:'#f0f4ff', symbol:'◎', border:'rgba(240,244,255,.2)'},
+  PENA: {name:'PENA', role:'Struktur',    color:'#4a8edb', symbol:'△', border:'rgba(74,142,219,.3)'},
+  VANIA:{name:'VANIA',role:'Persepsi',    color:'#7ab8f5', symbol:'◈', border:'rgba(122,184,245,.25)'},
+  MIZU: {name:'MIZU', role:'Regulasi',    color:'#9eaab8', symbol:'〜', border:'rgba(158,170,184,.25)'},
+  PULU: {name:'PULU', role:'Kebebasan',   color:'#3ecf6a', symbol:'⬡', border:'rgba(62,207,106,.25)'},
+  AL:   {name:'AL',   role:'Kritik',      color:'#888888', symbol:'□', border:'rgba(136,136,136,.25)'},
 };
 
-// ── CHAR DATA ──
-const chars={
-  MIO:{color:'#f0f4ff',role:'Metakognisi · Pusat Kendali',tagline:'Memahami pola & proses berpikir. Kesadaran mendahului segalanya.',transmission:'COGNITIVE AWARENESS SYSTEM · ONLINE',
-    symbol:`<circle cx="80" cy="80" r="60" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
-      <ellipse cx="80" cy="80" rx="55" ry="28" fill="none" stroke="currentColor" stroke-width="1.5"/>
-      <circle cx="80" cy="80" r="18" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="80" cy="80" r="6" fill="currentColor"/>
-      <line x1="80" y1="20" x2="80" y2="52" stroke="currentColor" stroke-width="1" opacity=".6"/>
-      <line x1="80" y1="108" x2="80" y2="140" stroke="currentColor" stroke-width="1" opacity=".6"/>
-      <line x1="25" y1="80" x2="57" y2="80" stroke="currentColor" stroke-width="1" opacity=".6"/>
-      <line x1="103" y1="80" x2="135" y2="80" stroke="currentColor" stroke-width="1" opacity=".6"/>
-      <circle cx="80" cy="80" r="38" fill="none" stroke="currentColor" stroke-width=".5" stroke-dasharray="4 4" opacity=".4"/>`,
-    aksara:`<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="20" y1="38" x2="20" y2="10"/><line x1="20" y1="10" x2="35" y2="26"/>
-      <line x1="35" y1="26" x2="50" y2="10"/><line x1="50" y1="10" x2="50" y2="38"/>
-      <line x1="15" y1="38" x2="55" y2="38"/>
-      <line x1="80" y1="10" x2="80" y2="38"/><line x1="72" y1="10" x2="88" y2="10"/>
-      <line x1="72" y1="38" x2="88" y2="38"/><circle cx="80" cy="24" r="5" stroke-width="1.5" opacity=".6"/>
-      <path d="M105 24 L115 10 L135 10 L145 24 L135 38 L115 38 Z" stroke-width="1.5"/>
-      <circle cx="125" cy="24" r="4" fill="currentColor" opacity=".5"/></g>`},
-  PENA:{color:'#4a8edb',role:'Struktur · Pengarah',tagline:'Menyusun & merencanakan. Tanpa arah, kecerdasan kehilangan bentuk.',transmission:'STRATEGIC FRAMEWORK · INITIALIZED',
-    symbol:`<polygon points="80,15 145,115 15,115" fill="none" stroke="currentColor" stroke-width="1.5"/>
-      <polygon points="80,35 125,105 35,105" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
-      <polygon points="80,55 105,95 55,95" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
-      <line x1="80" y1="15" x2="80" y2="115" stroke="currentColor" stroke-width="1" opacity=".4" stroke-dasharray="3 3"/>
-      <circle cx="80" cy="70" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="80" cy="70" r="3" fill="currentColor"/>
-      <line x1="48" y1="58" x2="112" y2="58" stroke="currentColor" stroke-width=".8" opacity=".5"/>`,
-    aksara:`<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="15" y1="10" x2="15" y2="38"/><path d="M15 10 Q40 10 40 20 Q40 30 15 30"/>
-      <line x1="10" y1="38" x2="28" y2="38"/>
-      <line x1="60" y1="10" x2="60" y2="38"/><line x1="60" y1="10" x2="82" y2="10"/>
-      <line x1="60" y1="24" x2="78" y2="24"/><line x1="60" y1="38" x2="82" y2="38"/>
-      <line x1="100" y1="38" x2="100" y2="10"/><line x1="100" y1="10" x2="122" y2="38"/>
-      <line x1="122" y1="10" x2="122" y2="38"/>
-      <line x1="145" y1="38" x2="160" y2="10"/><line x1="160" y1="10" x2="175" y2="38"/>
-      <line x1="150" y1="26" x2="170" y2="26"/><line x1="140" y1="38" x2="180" y2="38"/></g>`},
-  VANIA:{color:'#7ab8f5',role:'Persepsi · Pembentuk Realita',tagline:'Menggeser sudut pandang. Yang dilihat menentukan yang diyakini.',transmission:'SOCIAL PERCEPTION FIELD · ACTIVE',
-    symbol:`<circle cx="80" cy="80" r="55" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
-      <path d="M80 25 Q120 50 120 80 Q120 110 80 135 Q40 110 40 80 Q40 50 80 25Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
-      <path d="M80 40 Q108 60 108 80 Q108 100 80 120 Q52 100 52 80 Q52 60 80 40Z" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
-      <circle cx="80" cy="80" r="14" fill="none" stroke="currentColor" stroke-width="2"/>
-      <path d="M66 80 Q80 60 94 80 Q80 100 66 80Z" fill="currentColor" opacity=".7"/>
-      <circle cx="80" cy="80" r="4" fill="currentColor"/>`,
-    aksara:`<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="10" y1="10" x2="28" y2="38"/><line x1="28" y1="38" x2="46" y2="10"/>
-      <line x1="6" y1="10" x2="50" y2="10"/>
-      <line x1="68" y1="38" x2="82" y2="10"/><line x1="82" y1="10" x2="96" y2="38"/>
-      <line x1="73" y1="26" x2="91" y2="26"/>
-      <line x1="112" y1="38" x2="112" y2="10"/><line x1="112" y1="10" x2="132" y2="38"/>
-      <line x1="132" y1="10" x2="132" y2="38"/>
-      <line x1="152" y1="10" x2="152" y2="38"/><line x1="145" y1="10" x2="159" y2="10"/>
-      <line x1="145" y1="38" x2="159" y2="38"/>
-      <line x1="175" y1="38" x2="189" y2="10"/><line x1="189" y1="10" x2="203" y2="38"/>
-      <line x1="180" y1="26" x2="198" y2="26"/></g>`},
-  MIZU:{color:'#9eaab8',role:'Regulasi · Penyeimbang',tagline:'Menjaga respon & harmoni. Tanpa stabilitas, semua runtuh.',transmission:'EQUILIBRIUM MODULE · STABILIZING',
-    symbol:`<circle cx="80" cy="80" r="58" fill="none" stroke="currentColor" stroke-width="1" opacity=".2"/>
-      <path d="M30 80 Q55 50 80 80 Q105 110 130 80" fill="none" stroke="currentColor" stroke-width="2"/>
-      <path d="M30 65 Q55 35 80 65 Q105 95 130 65" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
-      <path d="M30 95 Q55 65 80 95 Q105 125 130 95" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
-      <circle cx="80" cy="80" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="80" cy="80" r="3" fill="currentColor"/>`,
-    aksara:`<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="10" y1="38" x2="10" y2="10"/><line x1="10" y1="10" x2="26" y2="26"/>
-      <line x1="26" y1="26" x2="42" y2="10"/><line x1="42" y1="10" x2="42" y2="38"/>
-      <line x1="6" y1="38" x2="46" y2="38"/>
-      <line x1="66" y1="10" x2="66" y2="38"/><line x1="58" y1="10" x2="74" y2="10"/>
-      <line x1="58" y1="38" x2="74" y2="38"/>
-      <line x1="90" y1="10" x2="116" y2="10"/><line x1="116" y1="10" x2="90" y2="38"/>
-      <line x1="90" y1="38" x2="116" y2="38"/>
-      <line x1="132" y1="10" x2="132" y2="32"/>
-      <path d="M132 32 Q132 40 142 40 Q152 40 152 32"/>
-      <line x1="152" y1="10" x2="152" y2="32"/></g>`},
-  PULU:{color:'#3ecf6a',role:'Kebebasan · Ekspansi',tagline:'Melampaui batas & kemungkinan. Batas hanya ada jika diterima.',transmission:'EXPANSION FIELD · UNBOUNDED',
-    symbol:`<polygon points="80,22 138,56 138,104 80,138 22,104 22,56" fill="none" stroke="currentColor" stroke-width="1.5"/>
-      <polygon points="80,38 118,60 118,100 80,122 42,100 42,60" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
-      <line x1="80" y1="22" x2="80" y2="138" stroke="currentColor" stroke-width=".8" opacity=".3"/>
-      <line x1="22" y1="56" x2="138" y2="104" stroke="currentColor" stroke-width=".8" opacity=".3"/>
-      <line x1="22" y1="104" x2="138" y2="56" stroke="currentColor" stroke-width=".8" opacity=".3"/>
-      <circle cx="80" cy="80" r="12" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="80" cy="80" r="4" fill="currentColor"/>
-      <circle cx="80" cy="80" r="22" fill="none" stroke="currentColor" stroke-width=".8" stroke-dasharray="2 6" opacity=".5"/>`,
-    aksara:`<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="10" y1="10" x2="10" y2="38"/><path d="M10 10 Q34 10 34 20 Q34 30 10 30"/>
-      <line x1="6" y1="38" x2="22" y2="38"/>
-      <line x1="52" y1="10" x2="52" y2="32"/>
-      <path d="M52 32 Q52 40 62 40 Q72 40 72 32"/>
-      <line x1="72" y1="10" x2="72" y2="32"/>
-      <line x1="92" y1="10" x2="92" y2="38"/><line x1="92" y1="38" x2="116" y2="38"/>
-      <line x1="132" y1="10" x2="132" y2="32"/>
-      <path d="M132 32 Q132 40 142 40 Q152 40 152 32"/>
-      <line x1="152" y1="10" x2="152" y2="32"/></g>`},
-  AL:{color:'#888888',role:'Kritik · Penguji',tagline:'Membongkar & menguji pikiran. Yang tidak diuji akan menipu.',transmission:'CRITICAL ANALYSIS ENGINE · RUNNING',
-    symbol:`<rect x="25" y="25" width="110" height="110" fill="none" stroke="currentColor" stroke-width="1.5"/>
-      <rect x="38" y="38" width="84" height="84" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
-      <rect x="52" y="52" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"/>
-      <line x1="25" y1="25" x2="135" y2="135" stroke="currentColor" stroke-width="1" opacity=".4"/>
-      <line x1="135" y1="25" x2="25" y2="135" stroke="currentColor" stroke-width="1" opacity=".4"/>
-      <rect x="68" y="68" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"/>
-      <rect x="74" y="74" width="12" height="12" fill="currentColor" opacity=".6"/>
-      <line x1="80" y1="15" x2="80" y2="25" stroke="currentColor" stroke-width="2"/>
-      <line x1="80" y1="135" x2="80" y2="145" stroke="currentColor" stroke-width="2"/>
-      <line x1="15" y1="80" x2="25" y2="80" stroke="currentColor" stroke-width="2"/>
-      <line x1="135" y1="80" x2="145" y2="80" stroke="currentColor" stroke-width="2"/>`,
-    aksara:`<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="80" y1="38" x2="100" y2="10"/><line x1="100" y1="10" x2="120" y2="38"/>
-      <line x1="86" y1="26" x2="114" y2="26"/><line x1="75" y1="38" x2="125" y2="38"/>
-      <line x1="145" y1="10" x2="145" y2="38"/><line x1="145" y1="38" x2="175" y2="38"/>
-      <line x1="140" y1="10" x2="162" y2="10"/></g>`}
+const SVG = {
+  MIO:`<circle cx="30" cy="30" r="22" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4"/>
+       <ellipse cx="30" cy="30" rx="20" ry="10" fill="none" stroke="currentColor" stroke-width="1.5"/>
+       <circle cx="30" cy="30" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+       <circle cx="30" cy="30" r="2.5" fill="currentColor"/>`,
+  PENA:`<polygon points="30,8 52,44 8,44" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <polygon points="30,18 44,40 16,40" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+        <circle cx="30" cy="32" r="3" fill="currentColor"/>`,
+  VANIA:`<circle cx="30" cy="30" r="20" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
+         <path d="M30 10 Q50 20 50 30 Q50 40 30 50 Q10 40 10 30 Q10 20 30 10Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+         <path d="M22 30 Q30 18 38 30 Q30 42 22 30Z" fill="currentColor" opacity=".8"/>`,
+  MIZU:`<path d="M10 30 Q20 18 30 30 Q40 42 50 30" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M10 22 Q20 10 30 22 Q40 34 50 22" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
+        <circle cx="30" cy="30" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/>`,
+  PULU:`<polygon points="30,10 50,21 50,39 30,50 10,39 10,21" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <polygon points="30,18 42,24 42,36 30,42 18,36 18,24" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
+        <circle cx="30" cy="30" r="4" fill="currentColor"/>`,
+  AL:`<rect x="12" y="12" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="20" y="20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+      <line x1="12" y1="12" x2="48" y2="48" stroke="currentColor" stroke-width="1" opacity=".4"/>
+      <line x1="48" y1="12" x2="12" y2="48" stroke="currentColor" stroke-width="1" opacity=".4"/>
+      <rect x="26" y="26" width="8" height="8" fill="currentColor" opacity=".7"/>`,
 };
 
-// ── SUMMON ──
-let stTimeout=null;
-const input=document.getElementById('codeInput');
-const stage=document.getElementById('stage');
-const statusEl=document.getElementById('status');
+// ── STATE ──
+let myChar = null, peer = null, myStream = null;
+let activeCalls = {}, dataConns = {}, presenceConns = {};
+let onlineChars = new Set();
+let incomingCallObj = null, incomingCallerChar = null;
+let callTimer = null, callSec = 0;
+let isMuted = false, isSpeakerOff = false;
+let pingInterval = null;
+let ringCtx = null, ringTimers = [];
 
-input.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){
-    const code=input.value.trim().toUpperCase();
-    if(chars[code]) summon(code);
-    else if(code.length>0){
-      document.getElementById('errorFlash').classList.add('show');
-      setTimeout(()=>document.getElementById('errorFlash').classList.remove('show'),200);
-      setStatus('KODE TIDAK DIKENAL · MIO / PENA / VANIA / MIZU / PULU / AL');
-    }
-  }
+const PREFIX = 'ins6x-';
+const pid = k => PREFIX + k;
+const nameOf = id => id.replace(PREFIX,'');
+
+// ── BUILD SELECT ──
+const grid = document.getElementById('charGrid');
+Object.entries(CHARS).forEach(([k,ch])=>{
+  const btn = document.createElement('div');
+  btn.className = 'char-btn';
+  btn.style.cssText = `border-color:${ch.border};`;
+  btn.innerHTML = `<span class="cb-symbol" style="color:${ch.color}">${ch.symbol}</span>
+    <div class="cb-name" style="color:${ch.color}">${ch.name}</div>
+    <div class="cb-role">${ch.role}</div>`;
+  btn.onclick = () => selectChar(k);
+  grid.appendChild(btn);
 });
 
-function setStatus(msg){statusEl.textContent=msg;clearTimeout(stTimeout);stTimeout=setTimeout(()=>statusEl.textContent='',3000);}
+// ── SELECT ──
+function selectChar(k){
+  const statusEl = document.getElementById('connectStatus');
+  statusEl.textContent = 'Menghubungkan...';
+  myChar = k;
 
-function summon(code){
-  const ch=chars[code];if(!ch)return;
-  input.value='';
-  try{sounds[code](getCtx());}catch(e){}
-  stage.style.display='flex';setTimeout(()=>stage.classList.add('active'),10);
-  const sym=document.getElementById('holoSymbol'),info=document.getElementById('charInfo');
-  const scan=document.getElementById('holoScan'),wrap=document.getElementById('holoWrap');
-  const tx=document.getElementById('transmission');
-  sym.classList.remove('visible');info.classList.remove('visible');
-  sym.style.color=ch.color;sym.innerHTML=ch.symbol;scan.style.color=ch.color;
-  document.getElementById('charLatin').textContent=code;
-  document.getElementById('charLatin').style.color=ch.color;
-  document.getElementById('charRole').textContent=ch.role;
-  document.getElementById('charRole').style.color=ch.color;
-  document.getElementById('charTagline').textContent=ch.tagline;
-  const aksaraSvg=document.getElementById('aksaraSvg');
-  aksaraSvg.innerHTML=ch.aksara;
-  aksaraSvg.querySelectorAll('*').forEach(el=>{
-    const f=el.getAttribute('fill');
-    if(!f||f==='none')el.style.stroke=ch.color;
-    else{el.style.fill=ch.color;el.style.stroke=ch.color;}
+  peer = new Peer(pid(k),{
+    host:'0.peerjs.com', port:443, secure:true, path:'/',
+    config:{iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:stun2.l.google.com:19302'}
+    ]}
   });
-  tx.textContent='';typeText(tx,ch.transmission,28);
-  buildRings(wrap,ch.color);spawnParticles(wrap,ch.color);
-  scan.style.animation='none';scan.offsetHeight;scan.style.animation='scanMove 2.2s linear infinite';
-  setTimeout(()=>{sym.classList.add('visible');setTimeout(()=>info.classList.add('visible'),350);},500);
+
+  peer.on('open', ()=>{
+    statusEl.textContent = '';
+    setupLobby();
+    showScreen('screenLobby');
+    pingAllPresence();
+    pingInterval = setInterval(pingAllPresence, 5000);
+  });
+
+  peer.on('error', err=>{
+    if(err.type==='unavailable-id'){
+      showToast('❌ '+k+' sudah online! Pilih lain.');
+      statusEl.textContent=''; peer.destroy(); peer=null; myChar=null;
+    } else {
+      showToast('⚠️ Error: '+err.type);
+      statusEl.textContent='';
+    }
+  });
+
+  // Incoming voice call
+  peer.on('call', handleIncomingCall);
+
+  // Incoming data (chat or presence)
+  peer.on('connection', conn=>{
+    const type = conn.metadata?.type;
+    if(type === 'presence'){
+      conn.on('open',()=>{
+        const who = nameOf(conn.peer);
+        if(CHARS[who]){ addOnline(who); conn.send({type:'presence-ack',from:myChar}); }
+        conn.on('data', d=>{ if(d?.type==='presence-bye') removeOnline(nameOf(conn.peer)); });
+        conn.on('close',()=> removeOnline(nameOf(conn.peer)));
+      });
+    } else {
+      // chat/data connection
+      conn.on('open',()=>{});
+      conn.on('data', d=> receiveChatMsg(d));
+      dataConns[conn.peer] = conn;
+    }
+  });
 }
 
-function buildRings(wrap,color){
-  wrap.querySelectorAll('.dr,.dp').forEach(r=>r.remove());
-  [{s:240,dash:false,rot:'ringRotate 9s linear infinite',op:.35},
-   {s:185,dash:true,rot:'ringRotateCCW 6s linear infinite',op:.25},
-   {s:130,dash:true,rot:'ringRotate 4s linear infinite',op:.18}
-  ].forEach(({s,dash,rot,op})=>{
-    const r=document.createElement('div');r.className='dr';
-    r.style.cssText=`position:absolute;width:${s}px;height:${s}px;border-radius:50%;border:1px ${dash?'dashed':'solid'} ${color};opacity:${op};animation:${rot};box-shadow:0 0 10px ${color}18;`;
-    wrap.insertBefore(r,wrap.firstChild);
-  });
-  const p=document.createElement('div');p.className='dp';
-  p.style.cssText=`position:absolute;width:260px;height:260px;border-radius:50%;border:1px solid ${color};animation:ringExpand 2.2s ease-out infinite;opacity:0;`;
-  wrap.insertBefore(p,wrap.firstChild);
+// ── PRESENCE ──
+function pingAllPresence(){
+  Object.keys(CHARS).filter(k=>k!==myChar).forEach(k=>pingOne(k));
 }
 
-function spawnParticles(wrap,color){
-  wrap.querySelectorAll('.particle').forEach(p=>p.remove());
-  for(let i=0;i<18;i++){
-    const p=document.createElement('div');p.className='particle';
-    const a=Math.random()*360,d=60+Math.random()*90;
-    p.style.cssText=`background:${color};position:absolute;width:2px;height:2px;border-radius:50%;left:50%;top:50%;--tx:${Math.cos(a*Math.PI/180)*d}px;--ty:${Math.sin(a*Math.PI/180)*d}px;animation:particleFly ${.7+Math.random()*1.1}s ease-out ${Math.random()*.4}s forwards;`;
-    wrap.appendChild(p);
+function pingOne(k){
+  if(presenceConns[k]?.open) return;
+  try{
+    const c = peer.connect(pid(k),{metadata:{type:'presence',from:myChar},reliable:true});
+    presenceConns[k] = c;
+    c.on('open',()=>{ addOnline(k); });
+    c.on('data', d=>{ if(d?.type==='presence-ack') addOnline(nameOf(c.peer)); });
+    c.on('close',()=>{ removeOnline(k); delete presenceConns[k]; });
+    c.on('error',()=>{ delete presenceConns[k]; });
+  } catch(e){}
+}
+
+function addOnline(k){
+  if(!CHARS[k] || k === myChar) return;
+  onlineChars.add(k);
+  renderOnlineList();
+}
+
+function removeOnline(k){
+  onlineChars.delete(k);
+  renderOnlineList();
+}
+
+function renderOnlineList(){
+  const list = document.getElementById('onlineList');
+  list.innerHTML = '';
+  if(onlineChars.size === 0){
+    list.innerHTML = `<div class="empty-state">Belum ada insignia lain online<br><br>
+      Bagikan link ke teman:<br>
+      <span style="color:var(--pena);word-break:break-all;font-size:9px;">${location.href}</span></div>`;
+    document.getElementById('btnGroup').disabled = true;
+    return;
   }
+  document.getElementById('btnGroup').disabled = false;
+  onlineChars.forEach(k=>{
+    const ch = CHARS[k];
+    const item = document.createElement('div');
+    item.className = 'online-item';
+    item.innerHTML = `
+      <div class="oi-left">
+        <div class="oi-dot" style="background:${ch.color};box-shadow:0 0 6px ${ch.color}"></div>
+        <div>
+          <div class="oi-name" style="color:${ch.color}">${ch.symbol} ${ch.name}</div>
+          <div class="oi-role">${ch.role}</div>
+        </div>
+      </div>
+      <div class="oi-actions">
+        <button class="btn-call btn-chat" onclick="openDM('${k}')">💬</button>
+        <button class="btn-call btn-voice" onclick="callChar('${k}')">📞</button>
+      </div>`;
+    list.appendChild(item);
+  });
 }
 
-function typeText(el,text,delay){
-  let i=0;el.textContent='';
-  const iv=setInterval(()=>{el.textContent+=text[i];i++;if(i>=text.length)clearInterval(iv);},delay);
+// ── LOBBY SETUP ──
+function setupLobby(){
+  const ch = CHARS[myChar];
+  document.getElementById('myDot').style.cssText = `background:${ch.color};box-shadow:0 0 6px ${ch.color}`;
+  document.getElementById('myName').textContent = myChar;
+  document.getElementById('myName').style.color = ch.color;
+  document.getElementById('myBadge').style.borderColor = ch.border;
+  document.getElementById('shareLink').textContent = location.href;
 }
 
-function closeStage(){
-  document.getElementById('charInfo').classList.remove('visible');
-  document.getElementById('holoSymbol').classList.remove('visible');
-  stage.classList.remove('active');
-  setTimeout(()=>{
-    stage.style.display='none';
-    document.getElementById('holoWrap').querySelectorAll('.dr,.dp,.particle').forEach(el=>el.remove());
-  },400);
+// ── CALL OUT ──
+async function callChar(k){
+  showToast('📞 Memanggil '+k+'...');
+  try{ myStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false}); }
+  catch(e){ showToast('❌ Izin mikrofon ditolak'); return; }
+
+  const call = peer.call(pid(k), myStream, {metadata:{callerChar:myChar}});
+  activeCalls[pid(k)] = call;
+
+  const dc = peer.connect(pid(k),{metadata:{type:'chat',from:myChar},reliable:true});
+  dataConns[pid(k)] = dc;
+  dc.on('data', d=> receiveChatMsg(d));
+
+  let answered = false;
+  call.on('stream', remote=>{
+    if(!answered){ answered=true; startCallScreen([k]); }
+    addRemoteAudio(remote);
+  });
+  call.on('close',()=>endCall());
+  call.on('error',()=>{ showToast('❌ Panggilan gagal'); endCall(); });
+
+  // Timeout 30s
+  setTimeout(()=>{ if(!answered){ showToast('📵 Tidak diangkat'); endCall(); } },30000);
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeStage();});
+// ── GROUP CALL ──
+async function startGroupCall(){
+  const targets = [...onlineChars];
+  if(!targets.length){ showToast('Tidak ada yang online'); return; }
+  showToast('📞 Memanggil semua insignia...');
+  try{ myStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false}); }
+  catch(e){ showToast('❌ Izin mikrofon ditolak'); return; }
+
+  targets.forEach(k=>{
+    const call = peer.call(pid(k), myStream, {metadata:{callerChar:myChar,isGroup:true}});
+    activeCalls[pid(k)] = call;
+    call.on('stream', remote=> addRemoteAudio(remote));
+    call.on('close',()=>{ delete activeCalls[pid(k)]; });
+
+    const dc = peer.connect(pid(k),{metadata:{type:'chat',from:myChar},reliable:true});
+    dataConns[pid(k)] = dc;
+    dc.on('data', d=> receiveChatMsg(d));
+  });
+
+  startCallScreen(targets);
+}
+
+// ── DM ONLY ──
+function openDM(k){
+  const dc = peer.connect(pid(k),{metadata:{type:'chat',from:myChar},reliable:true});
+  dataConns[pid(k)] = dc;
+  dc.on('open',()=> showToast('💬 Chat dengan '+k+' siap'));
+  dc.on('data', d=> receiveChatMsg(d));
+  startCallScreen([k], true);
+}
+
+// ── INCOMING CALL ──
+function handleIncomingCall(call){
+  const callerChar = call.metadata?.callerChar || nameOf(call.peer);
+  const ch = CHARS[callerChar]||{name:callerChar,role:'',color:'#fff',symbol:'?',border:'rgba(255,255,255,.2)'};
+  incomingCallObj = call;
+  incomingCallerChar = callerChar;
+
+  document.getElementById('incSymbol').textContent = ch.symbol;
+  document.getElementById('incSymbol').style.color = ch.color;
+  document.getElementById('incName').textContent = ch.name;
+  document.getElementById('incName').style.color = ch.color;
+  document.getElementById('incRole').textContent = ch.role;
+  document.getElementById('incCard').style.borderColor = ch.border;
+  document.getElementById('incType').textContent = call.metadata?.isGroup ? 'GROUP CALL' : 'VOICE + CHAT';
+
+  document.getElementById('incomingCall').classList.add('show');
+  playRingtone();
+}
+
+async function acceptCall(){
+  stopRingtone();
+  document.getElementById('incomingCall').classList.remove('show');
+  if(!incomingCallObj) return;
+  try{ myStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false}); }
+  catch(e){ showToast('❌ Izin mikrofon ditolak'); return; }
+
+  incomingCallObj.answer(myStream);
+  activeCalls[incomingCallObj.peer] = incomingCallObj;
+  incomingCallObj.on('stream', remote=> addRemoteAudio(remote));
+  incomingCallObj.on('close',()=> endCall());
+  startCallScreen([incomingCallerChar]);
+}
+
+function declineCall(){
+  stopRingtone();
+  document.getElementById('incomingCall').classList.remove('show');
+  if(incomingCallObj) incomingCallObj.close();
+  incomingCallObj = null; incomingCallerChar = null;
+}
+
+// ── CALL SCREEN ──
+function startCallScreen(charKeys, chatOnly=false){
+  clearInterval(pingInterval);
+  showScreen('screenCall');
+
+  document.getElementById('callStatusLabel').textContent = chatOnly ? 'CHAT AKTIF' : 'TERHUBUNG';
+  document.getElementById('callWith').textContent = charKeys.map(k=> CHARS[k]?.symbol+' '+k).join('  ');
+
+  // Avatars
+  const row = document.getElementById('avatarsRow');
+  row.innerHTML = '';
+  addAvatar(row, myChar, true);
+  charKeys.forEach(k=> addAvatar(row, k, false));
+
+  // Timer
+  callSec = 0;
+  clearInterval(callTimer);
+  if(!chatOnly){
+    callTimer = setInterval(()=>{
+      callSec++;
+      document.getElementById('callTimer').textContent =
+        String(Math.floor(callSec/60)).padStart(2,'0')+':'+String(callSec%60).padStart(2,'0');
+    },1000);
+  } else { document.getElementById('callTimer').textContent = ''; }
+
+  // Chat
+  const area = document.getElementById('chatArea');
+  area.innerHTML = '';
+  addSysMsg('— Terhubung dengan '+charKeys.join(', ')+' —');
+
+  const inp = document.getElementById('chatInput');
+  inp.onkeydown = e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} };
+}
+
+function addAvatar(row, k, isMe){
+  const ch = CHARS[k]||{name:k,color:'#fff',symbol:'?'};
+  const d = document.createElement('div');
+  d.className='avatar'; d.id='av-'+k;
+  d.innerHTML=`<div class="avatar-ring" id="avring-${k}" style="border-color:${ch.color};color:${ch.color};box-shadow:0 0 14px ${ch.color}22">
+    <svg class="avatar-symbol" viewBox="0 0 60 60" style="color:${ch.color}">${SVG[k]||''}</svg>
+    <div class="muted-badge" id="mutebadge-${k}">🔇</div>
+  </div>
+  <div class="avatar-name" style="color:${ch.color}">${ch.symbol} ${k}${isMe?' ·me':''}</div>`;
+  row.appendChild(d);
+}
+
+// ── CHAT ──
+function sendMsg(){
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim(); if(!text) return;
+  inp.value = '';
+  const payload = {type:'chat',sender:myChar,text,ts:Date.now()};
+  Object.values(dataConns).forEach(dc=>{ try{if(dc.open) dc.send(payload);}catch(e){} });
+  appendMsg(payload, true);
+}
+
+function receiveChatMsg(d){
+  if(d?.type==='chat') appendMsg(d, false);
+}
+
+function appendMsg(d, mine){
+  const ch = CHARS[d.sender]||{name:d.sender,color:'#fff',symbol:''};
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg'+(mine?' mine':'');
+  div.innerHTML=`<div class="msg-dot" style="background:${ch.color}"></div>
+    <div class="msg-bubble"><div class="msg-sender" style="color:${ch.color}">${ch.symbol} ${d.sender}</div>${esc(d.text)}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addSysMsg(txt){
+  const area = document.getElementById('chatArea');
+  const d = document.createElement('div'); d.className='sys-msg'; d.textContent=txt;
+  area.appendChild(d); area.scrollTop=area.scrollHeight;
+}
+
+function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+
+// ── AUDIO ──
+const audioEls = [];
+function addRemoteAudio(stream){
+  // reuse #remoteAudio for first, create more for group
+  let el = document.getElementById('remoteAudio');
+  if(el.srcObject){ el = document.createElement('audio'); el.autoplay=true; el.setAttribute('playsinline',''); document.body.appendChild(el); audioEls.push(el); }
+  el.srcObject = stream;
+  el.play().catch(()=>{});
+}
+
+function cleanupAudio(){
+  const main = document.getElementById('remoteAudio');
+  main.srcObject=null;
+  audioEls.forEach(el=>{ try{el.srcObject=null;el.remove();}catch(e){} });
+  audioEls.length=0;
+}
+
+// ── RINGTONE (Web Audio — mysterious calm) ──
+function playRingtone(){
+  stopRingtone();
+  ringCtx = new(window.AudioContext||window.webkitAudioContext)();
+  function tick(){
+    if(!ringCtx) return;
+    const t = ringCtx.currentTime;
+    const rev = makeRev(ringCtx,1.5,2);
+    const mg = ringCtx.createGain(); mg.gain.setValueAtTime(.3,t);
+    rev.connect(mg); mg.connect(ringCtx.destination);
+    // Two soft bell tones — F# minor, mysterious
+    [[369.99,0,.6],[493.88,.18,.6],[369.99,.5,.5],[0,0,0]].forEach(([f,d,dr])=>{
+      if(!f) return;
+      const o=ringCtx.createOscillator(),g=ringCtx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(f,t+d);
+      g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(.5,t+d+.02);
+      g.gain.exponentialRampToValueAtTime(.0001,t+d+dr);
+      o.connect(g); g.connect(rev);
+      o.start(t+d); o.stop(t+d+dr+.05);
+    });
+    // Subtle low pulse
+    const lo=ringCtx.createOscillator(),lg=ringCtx.createGain();
+    lo.type='sine'; lo.frequency.setValueAtTime(123.47,t);
+    lg.gain.setValueAtTime(0,t); lg.gain.linearRampToValueAtTime(.08,t+.05);
+    lg.gain.exponentialRampToValueAtTime(.0001,t+.4);
+    lo.connect(lg); lg.connect(mg);
+    lo.start(t); lo.stop(t+.5);
+    ringTimers.push(setTimeout(tick, 1800));
+  }
+  tick();
+}
+
+function stopRingtone(){
+  ringTimers.forEach(clearTimeout); ringTimers=[];
+  if(ringCtx){ try{ringCtx.close();}catch(e){} ringCtx=null; }
+}
+
+function makeRev(ctx,dur,decay){
+  const len=ctx.sampleRate*dur, buf=ctx.createBuffer(2,len,ctx.sampleRate);
+  for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}
+  const conv=ctx.createConvolver(); conv.buffer=buf; return conv;
+}
+
+// ── CONTROLS ──
+function toggleMute(){
+  if(!myStream) return;
+  isMuted=!isMuted;
+  myStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
+  const btn=document.getElementById('btnMute');
+  btn.classList.toggle('muted',isMuted);
+  btn.textContent=isMuted?'🔇':'🎤';
+  // Show muted badge on my avatar
+  const badge=document.getElementById('mutebadge-'+myChar);
+  if(badge) badge.classList.toggle('show',isMuted);
+  showToast(isMuted?'🔇 Mikrofon mati':'🎤 Mikrofon aktif');
+}
+
+function toggleSpeaker(){
+  isSpeakerOff=!isSpeakerOff;
+  document.getElementById('remoteAudio').muted=isSpeakerOff;
+  audioEls.forEach(el=>el.muted=isSpeakerOff);
+  document.getElementById('btnSpeaker').textContent=isSpeakerOff?'🔈':'🔊';
+  showToast(isSpeakerOff?'🔈 Speaker mati':'🔊 Speaker aktif');
+}
+
+function endCall(){
+  clearInterval(callTimer);
+  Object.values(activeCalls).forEach(c=>{ try{c.close();}catch(e){} }); activeCalls={};
+  Object.values(dataConns).forEach(d=>{ try{d.close();}catch(e){} }); dataConns={};
+  if(myStream){ myStream.getTracks().forEach(t=>t.stop()); myStream=null; }
+  cleanupAudio();
+  isMuted=false; isSpeakerOff=false;
+  document.getElementById('btnMute').classList.remove('muted');
+  document.getElementById('btnMute').textContent='🎤';
+  document.getElementById('btnSpeaker').textContent='🔊';
+  showScreen('screenLobby');
+  pingInterval=setInterval(pingAllPresence,5000);
+  pingAllPresence();
+  showToast('📵 Panggilan diakhiri');
+}
+
+// ── UTILS ──
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function logout(){
+  clearInterval(pingInterval); clearInterval(callTimer);
+  // Broadcast bye
+  Object.values(presenceConns).forEach(c=>{ try{if(c.open)c.send({type:'presence-bye'});}catch(e){} });
+  if(peer){ peer.destroy(); peer=null; }
+  if(myStream){ myStream.getTracks().forEach(t=>t.stop()); myStream=null; }
+  activeCalls={}; dataConns={}; presenceConns={}; onlineChars=new Set();
+  myChar=null; isMuted=false; isSpeakerOff=false;
+  showScreen('screenSelect');
+}
 </script>
 </body>
 </html>

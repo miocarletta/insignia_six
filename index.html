@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S.O.S Emergency Signal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #ff1a1a;
+      --red-dim: #7a0000;
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #222;
+      --text: #e0e0e0;
+      --muted: #666;
+      --green: #00ff88;
+      --amber: #ffbb00;
+      --white: #ffffff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,26,26,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,26,26,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 600px;
+      padding: 20px 16px 40px;
+    }
+
+    /* HEADER */
+    .header {
+      text-align: center;
+      padding: 24px 0 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .header-label {
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(52px, 18vw, 88px);
+      color: var(--red);
+      line-height: 1;
+      letter-spacing: 8px;
+      text-shadow:
+        0 0 20px rgba(255,26,26,0.6),
+        0 0 60px rgba(255,26,26,0.2);
+      animation: flicker 3s infinite;
+    }
+
+    @keyframes flicker {
+      0%, 95%, 100% { opacity: 1; }
+      96% { opacity: 0.7; }
+      97% { opacity: 1; }
+      98% { opacity: 0.5; }
+      99% { opacity: 1; }
+    }
+
+    .header-sub {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* SOS BUTTON */
+    .sos-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .sos-btn {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: none;
+      background: radial-gradient(circle at 35% 35%, #ff4444, #cc0000, #7a0000);
+      cursor: pointer;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 42px;
+      letter-spacing: 6px;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      box-shadow:
+        0 0 0 6px rgba(255,26,26,0.15),
+        0 0 0 12px rgba(255,26,26,0.08),
+        0 8px 40px rgba(255,26,26,0.5);
+      transition: transform 0.1s, box-shadow 0.2s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sos-btn::before {
+      content: '';
+      position: absolute;
+      inset: -16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,26,26,0.3);
+      animation: ring-pulse 2s ease-out infinite;
+    }
+
+    .sos-btn::after {
+      content: '';
+      position: absolute;
+      inset: -32px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,26,26,0.15);
+      animation: ring-pulse 2s ease-out infinite 0.5s;
+    }
+
+    @keyframes ring-pulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      100% { transform: scale(1.2); opacity: 0; }
+    }
+
+    .sos-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 4px rgba(255,26,26,0.2), 0 4px 20px rgba(255,26,26,0.4);
+    }
+
+    .sos-btn.active {
+      animation: sos-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes sos-pulse {
+      0%, 100% { box-shadow: 0 0 0 6px rgba(255,26,26,0.2), 0 0 0 12px rgba(255,26,26,0.1), 0 8px 60px rgba(255,26,26,0.7); }
+      50% { box-shadow: 0 0 0 16px rgba(255,26,26,0.15), 0 0 0 30px rgba(255,26,26,0.05), 0 8px 80px rgba(255,26,26,0.9); }
+    }
+
+    .sos-hint {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    /* STATUS */
+    .status-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .status-dot.ready { background: var(--amber); animation: blink 1.5s infinite; }
+    .status-dot.active { background: var(--green); animation: blink 0.6s infinite; }
+    .status-dot.sent { background: var(--green); }
+    .status-dot.error { background: var(--red); }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .status-text {
+      font-size: 12px;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .status-time {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* GPS PANEL */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .panel-header {
+      padding: 10px 16px;
+      background: rgba(255,26,26,0.06);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--red);
+      text-transform: uppercase;
+    }
+
+    .panel-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+    }
+
+    .panel-badge.searching {
+      background: rgba(255,187,0,0.15);
+      color: var(--amber);
+      animation: blink 1s infinite;
+    }
+    .panel-badge.found {
+      background: rgba(0,255,136,0.1);
+      color: var(--green);
+    }
+    .panel-badge.error {
+      background: rgba(255,26,26,0.1);
+      color: var(--red);
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .gps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .gps-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .gps-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .gps-value {
+      font-size: 13px;
+      color: var(--green);
+    }
+
+    .gps-value.loading {
+      color: var(--muted);
+      animation: blink 1s infinite;
+    }
+
+    .gps-value.error-text {
+      color: var(--red);
+      font-size: 11px;
+    }
+
+    .map-placeholder {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d0d0d;
+      position: relative;
+    }
+
+    .map-placeholder iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .map-loading {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    .map-scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0,255,136,0.3), transparent);
+      animation: scan 2.5s linear infinite;
+    }
+
+    @keyframes scan {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+
+    /* SHARE PANEL */
+    .share-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .share-btn {
+      padding: 12px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      text-decoration: none;
+    }
+
+    .share-btn:hover, .share-btn:active {
+      border-color: var(--red);
+      background: rgba(255,26,26,0.07);
+      color: var(--white);
+    }
+
+    .share-btn .icon { font-size: 16px; }
+
+    .share-btn.primary {
+      grid-column: 1 / -1;
+      border-color: rgba(255,26,26,0.4);
+      background: rgba(255,26,26,0.08);
+      color: var(--red);
+      font-size: 12px;
+      letter-spacing: 2px;
+      padding: 14px;
+    }
+
+    .share-btn.primary:hover {
+      background: rgba(255,26,26,0.15);
+    }
+
+    /* ALERT LOG */
+    .log {
+      font-size: 11px;
+      color: var(--muted);
+      max-height: 80px;
+      overflow-y: auto;
+      line-height: 1.8;
+    }
+
+    .log-entry {
+      display: flex;
+      gap: 8px;
+    }
+
+    .log-entry.success .log-msg { color: var(--green); }
+    .log-entry.warn .log-msg { color: var(--amber); }
+    .log-entry.err .log-msg { color: var(--red); }
+
+    /* FOOTER */
+    .footer {
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #333;
+      margin-top: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* MORSE */
+    .morse-row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 4px;
+      margin-bottom: 0;
+    }
+
+    .morse-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--red-dim);
+    }
+
+    .morse-dash {
+      width: 28px; height: 10px;
+      border-radius: 2px;
+      background: var(--red-dim);
+    }
+
+    .morse-dot.lit, .morse-dash.lit {
+      background: var(--red);
+      box-shadow: 0 0 10px var(--red);
+    }
+
+    /* NOTIFICATION BANNER */
+    .banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: var(--red);
+      color: white;
+      padding: 12px 16px;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-align: center;
+      transform: translateY(-100%);
+      transition: transform 0.3s;
+      z-index: 100;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+    }
+
+    .banner.show { transform: translateY(0); }
+
+    /* COPY toast */
+    .toast {
+      position: fixed;
+      bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 400px) {
+      .gps-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="banner" id="banner">⚠ SINYAL S.O.S AKTIF — BANTUAN SEDANG DIKIRIM</div>
+<div class="toast" id="toast">✓ DISALIN</div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-label">SISTEM DARURAT</div>
+    <div class="header-title">S·O·S</div>
+    <div class="header-sub">SAVE OUR SOULS — EMERGENCY BEACON</div>
+  </div>
+
+  <!-- MORSE ANIMATION -->
+  <div class="morse-row" id="morse">
+    <div class="morse-dot" id="m0"></div>
+    <div class="morse-dot" id="m1"></div>
+    <div class="morse-dot" id="m2"></div>
+    <div class="morse-dash" id="m3"></div>
+    <div class="morse-dash" id="m4"></div>
+    <div class="morse-dash" id="m5"></div>
+    <div class="morse-dot" id="m6"></div>
+    <div class="morse-dot" id="m7"></div>
+    <div class="morse-dot" id="m8"></div>
+  </div>
+
+  <!-- SOS BUTTON -->
+  <div class="sos-wrap" style="margin-top:24px">
+    <button class="sos-btn" id="sosBtn" onclick="activateSOS()">S·O·S</button>
+    <div class="sos-hint">TEKAN UNTUK MENGAKTIFKAN SINYAL</div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="status-bar" id="statusBar">
+    <div class="status-dot ready" id="statusDot"></div>
+    <div class="status-text" id="statusText">SISTEM SIAP — TEKAN TOMBOL S.O.S UNTUK DARURAT</div>
+    <div class="status-time" id="statusTime"></div>
+  </div>
+
+  <!-- GPS PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">📡 DATA LOKASI GPS</div>
+      <div class="panel-badge searching" id="gpsBadge">MENCARI...</div>
+    </div>
+    <div class="panel-body">
+      <div class="gps-grid">
+        <div class="gps-field">
+          <div class="gps-label">LATITUDE</div>
+          <div class="gps-value loading" id="lat">—</div>
+        </div>
+        <div class="gps-field">
+          <div class="gps-label">LONGITUDE</div>
+          <div class="gps-value loading" id="lng">—</div>
+        </div>
+        <div class="gps-field">
+          <div class="gps-label">AKURASI</div>
+          <div class="gps-value loading" id="acc">—</div>
+        </div>
+        <div class="gps-field">
+          <div class="gps-label">KETINGGIAN</div>
+          <div class="gps-value loading" id="alt">—</div>
+        </div>
+      </div>
+      <div class="gps-field" style="margin-bottom:14px">
+        <div class="gps-label">ALAMAT / TAUTAN MAPS</div>
+        <div class="gps-value loading" id="addr" style="font-size:11px;word-break:break-all">MENUNGGU IZIN GPS...</div>
+      </div>
+      <div class="map-placeholder" id="mapBox">
+        <div class="map-scan-line"></div>
+        <div class="map-loading">MENUNGGU KOORDINAT GPS...<br><br>📡 Izinkan akses lokasi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARE PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">📤 KIRIM BANTUAN</div>
+    </div>
+    <div class="panel-body">
+      <div class="share-grid">
+        <button class="share-btn primary" id="copyBtn" onclick="copyLocation()" disabled>
+          <span class="icon">📋</span> SALIN KOORDINAT & LINK
+        </button>
+        <a class="share-btn" id="waBtn" href="#" target="_blank" onclick="return false;">
+          <span class="icon">💬</span> WhatsApp
+        </a>
+        <a class="share-btn" id="smsBtn" href="#" onclick="return false;">
+          <span class="icon">📱</span> SMS
+        </a>
+        <a class="share-btn" id="mapsBtn" href="#" target="_blank" onclick="return false;">
+          <span class="icon">🗺️</span> Buka Maps
+        </a>
+        <a class="share-btn" id="callBtn" href="tel:112">
+          <span class="icon">🚨</span> TELEPON 112
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG PANEL -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">📋 LOG AKTIVITAS</div>
+    </div>
+    <div class="panel-body">
+      <div class="log" id="log">
+        <div class="log-entry warn">
+          <span class="log-time">[SISTEM]</span>
+          <span class="log-msg">Menunggu aktivasi sinyal darurat...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    © S.O.S EMERGENCY BEACON · AKSES BEBAS UNTUK SEMUA · TEKAN 112 JIKA DARURAT
+  </div>
+
+</div>
+
+<script>
+  let coords = null;
+  let sosActive = false;
+  let morseInterval = null;
+  const morseSeq = [0,1,2,3,4,5,6,7,8]; // dot dot dot — dash dash dash — dot dot dot
+
+  // MORSE animation
+  function startMorse() {
+    const seq = [0,1,2, null, 3,4,5, null, 6,7,8];
+    let i = 0;
+    // reset
+    morseSeq.forEach(n => document.getElementById('m'+n).classList.remove('lit'));
+
+    function step() {
+      morseSeq.forEach(n => document.getElementById('m'+n).classList.remove('lit'));
+      const cur = seq[i % seq.length];
+      if (cur !== null) document.getElementById('m'+cur).classList.add('lit');
+      i++;
+    }
+    if (morseInterval) clearInterval(morseInterval);
+    morseInterval = setInterval(step, 200);
+  }
+
+  startMorse();
+
+  // CLOCK
+  function tick() {
+    const now = new Date();
+    document.getElementById('statusTime').textContent =
+      now.toLocaleTimeString('id-ID', { hour12: false });
+  }
+  setInterval(tick, 1000); tick();
+
+  // LOG
+  function addLog(msg, type='info') {
+    const log = document.getElementById('log');
+    const t = new Date().toLocaleTimeString('id-ID',{hour12:false});
+    const el = document.createElement('div');
+    el.className = 'log-entry ' + (type==='success'?'success':type==='error'?'err':'warn');
+    el.innerHTML = `<span class="log-time">[${t}]</span> <span class="log-msg">${msg}</span>`;
+    log.prepend(el);
+  }
+
+  // GET GPS
+  function getGPS() {
+    if (!navigator.geolocation) {
+      setGPSError('Browser tidak mendukung GPS');
+      return;
+    }
+
+    addLog('Meminta akses lokasi GPS...', 'warn');
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        coords = pos.coords;
+        const lat = coords.latitude.toFixed(6);
+        const lng = coords.longitude.toFixed(6);
+        const acc = Math.round(coords.accuracy);
+        const alt = coords.altitude ? coords.altitude.toFixed(1)+'m' : 'N/A';
+
+        document.getElementById('lat').textContent = lat;
+        document.getElementById('lat').classList.remove('loading');
+        document.getElementById('lng').textContent = lng;
+        document.getElementById('lng').classList.remove('loading');
+        document.getElementById('acc').textContent = '±'+acc+'m';
+        document.getElementById('acc').classList.remove('loading');
+        document.getElementById('alt').textContent = alt;
+        document.getElementById('alt').classList.remove('loading');
+
+        const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+        document.getElementById('addr').textContent = mapsLink;
+        document.getElementById('addr').classList.remove('loading');
+
+        // Update badge
+        const badge = document.getElementById('gpsBadge');
+        badge.textContent = 'TERKUNCI ✓';
+        badge.className = 'panel-badge found';
+
+        // Update map iframe
+        document.getElementById('mapBox').innerHTML = `
+          <iframe
+            src="https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>`;
+
+        // Enable share buttons
+        enableShareButtons(lat, lng, mapsLink);
+
+        addLog(`Koordinat ditemukan: ${lat}, ${lng} (±${acc}m)`, 'success');
+      },
+      (err) => {
+        let msg = 'Gagal mendapatkan lokasi';
+        if (err.code === 1) msg = 'Izin lokasi ditolak — aktifkan di pengaturan browser';
+        if (err.code === 2) msg = 'Posisi tidak tersedia';
+        if (err.code === 3) msg = 'Timeout — coba lagi';
+        setGPSError(msg);
+        addLog(msg, 'error');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+
+  function setGPSError(msg) {
+    ['lat','lng','acc','alt'].forEach(id => {
+      const el = document.getElementById(id);
+      el.textContent = 'ERR';
+      el.className = 'gps-value error-text';
+    });
+    document.getElementById('addr').textContent = msg;
+    document.getElementById('addr').className = 'gps-value error-text';
+    const badge = document.getElementById('gpsBadge');
+    badge.textContent = 'GAGAL ✗';
+    badge.className = 'panel-badge error';
+  }
+
+  function enableShareButtons(lat, lng, mapsLink) {
+    document.getElementById('copyBtn').disabled = false;
+
+    const sosMsg = encodeURIComponent(
+      `🚨 DARURAT - SINYAL S.O.S 🚨\n\nSaya membutuhkan BANTUAN SEGERA!\n\n📍 Koordinat: ${lat}, ${lng}\n🗺️ Lokasi: ${mapsLink}\n\nTolong hubungi bantuan darurat: 112`
+    );
+
+    const waHref = `https://wa.me/?text=${sosMsg}`;
+    document.getElementById('waBtn').href = waHref;
+    document.getElementById('waBtn').onclick = null;
+
+    const smsHref = `sms:?body=${sosMsg}`;
+    document.getElementById('smsBtn').href = smsHref;
+    document.getElementById('smsBtn').onclick = null;
+
+    document.getElementById('mapsBtn').href = mapsLink;
+    document.getElementById('mapsBtn').onclick = null;
+  }
+
+  // COPY
+  function copyLocation() {
+    if (!coords) return;
+    const lat = coords.latitude.toFixed(6);
+    const lng = coords.longitude.toFixed(6);
+    const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+    const text = `🚨 DARURAT S.O.S\nLokasi: ${lat}, ${lng}\nMaps: ${mapsLink}`;
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+      addLog('Koordinat disalin ke clipboard', 'success');
+    }).catch(() => {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+  }
+
+  // ACTIVATE SOS
+  function activateSOS() {
+    const btn = document.getElementById('sosBtn');
+    const dot = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+
+    if (!sosActive) {
+      sosActive = true;
+      btn.classList.add('active');
+
+      dot.className = 'status-dot active';
+      text.textContent = '⚠ SINYAL S.O.S AKTIF — MENGIRIM PERINGATAN DARURAT';
+
+      const banner = document.getElementById('banner');
+      banner.classList.add('show');
+      setTimeout(() => banner.classList.remove('show'), 4000);
+
+      addLog('🚨 SINYAL S.O.S DIAKTIFKAN', 'error');
+      addLog('Mengambil koordinat GPS...', 'warn');
+      getGPS();
+
+      // Vibrate morse (. . . — — — . . .)
+      if (navigator.vibrate) {
+        navigator.vibrate([200,100,200,100,200,300,500,100,500,100,500,300,200,100,200,100,200]);
+      }
+
+      // Try sound
+      playSOSBeep();
+
+      btn.textContent = '✕ BATAL';
+
+    } else {
+      sosActive = false;
+      btn.classList.remove('active');
+      btn.textContent = 'S·O·S';
+
+      dot.className = 'status-dot ready';
+      text.textContent = 'SINYAL DIBATALKAN — SISTEM SIAP';
+      addLog('Sinyal S.O.S dibatalkan oleh pengguna', 'warn');
+    }
+  }
+
+  // BEEP
+  function playSOSBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const seq = [
+        {d:200,g:300},{d:200,g:200},{d:200,g:400},  // ...
+        {d:600,g:300},{d:600,g:200},{d:600,g:400},  // ---
+        {d:200,g:300},{d:200,g:200},{d:200,g:500},  // ...
+      ];
+      let t = ctx.currentTime;
+      seq.forEach(({d, g}) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.setValueAtTime(0, t + d/1000);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(t); osc.stop(t + d/1000);
+        t += d/1000 + g/1000;
+      });
+    } catch(e) {}
+  }
+
+  // Auto-get GPS on load (silent)
+  window.addEventListener('load', () => {
+    setTimeout(getGPS, 800);
+  });
+</script>
+</body>
+</html>
